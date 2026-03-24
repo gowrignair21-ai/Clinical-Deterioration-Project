@@ -127,14 +127,19 @@ if st.button('Predict Deterioration'):
     prediction = rf_model.predict(input_df)
     prediction_proba = rf_model.predict_proba(input_df)
         
-    st.subheader('Prediction Result:')
+st.subheader('Prediction Result:')
 
-    print(f"Prediction for new patient: {prediction[0]}")
-    print(f"Probability of no deterioration (0): {prediction_proba[0][0]:.4f}")
-    print(f"Probability of deterioration (1): {prediction_proba[0][1]:.4f}")
+# Show raw prediction value (0 or 1)
+st.write(f"**Prediction Value:** {prediction[0]}")
 
-    if prediction[0] == 1:
-        st.error(f"The new patient is predicted to deteriorate within the next 12 hours.")
-    else:
-        st.success(f"The new patient is predicted not to deteriorate within the next 12 hours.")
-        st.write('Disclaimer: This prediction is for informational purposes only and should not replace professional medical advice.')
+# Show probabilities
+st.write(f"**Probability of No Deterioration (0):** {prediction_proba[0][0]:.4f}")
+st.write(f"**Probability of Deterioration (1):** {prediction_proba[0][1]:.4f}")
+
+# Show result message
+if prediction[0] == 1:
+    st.error("⚠️ This patient is predicted to **deteriorate** within the next 12 hours.")
+else:
+    st.success("✅ This patient is predicted to **not deteriorate** within the next 12 hours.")
+
+st.caption('Disclaimer: This prediction is for informational purposes only and should not replace professional medical advice.')

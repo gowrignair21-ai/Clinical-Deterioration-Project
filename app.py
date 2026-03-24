@@ -11,7 +11,7 @@ robust_scaler = joblib.load('robust_scaler.pkl')
 # Define the columns that were scaled by StandardScaler and RobustScaler
 ss_cols = ['heart_rate', 'respiratory_rate', 'temperature_c', 'wbc_count', 
            'creatinine', 'hemoglobin', 'systolic_bp', 'diastolic_bp']
-rbt_cols = ['spo2_pct', 'lactate', 'crp_level']
+rbt_cols = ['spo2_pct', 'lactate', 'crp_level','oxygen_flow']
 
 # Define winsorization limits used during training
 winsor_limits = {
@@ -130,3 +130,6 @@ if st.button('Predict Deterioration'):
             st.success("✅ This patient is predicted to **not deteriorate** within the next 12 hours.")
 
         st.caption('Disclaimer: This prediction is for informational purposes only and should not replace professional medical advice.')
+        except Exception as e:
+            st.error(f"An error occurred during prediction: {str(e)}")
+            st.info("Please check your input values and try again.")

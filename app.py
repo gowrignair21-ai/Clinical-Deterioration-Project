@@ -74,72 +74,62 @@ admission_type_options = ['Elective', 'Transfer', 'ED']
 admission_type = st.sidebar.selectbox('Admission Type', admission_type_options)
 
 if st.button('Predict Deterioration'):
-    # Collect inputs into a DataFrame
-    input_data = {
-        'hour_from_admission': [hour_from_admission],
-        'heart_rate': [heart_rate],
-        'respiratory_rate': [respiratory_rate],
-        'spo2_pct': [spo2_pct],
-        'temperature_c': [temperature_c],
-        'systolic_bp': [systolic_bp],
-        'diastolic_bp': [diastolic_bp],
-        'oxygen_flow': [oxygen_flow],
-        'mobility_score': [mobility_score],
-        'nurse_alert': [nurse_alert],
-        'wbc_count': [wbc_count],
-        'lactate': [lactate],
-        'creatinine': [creatinine],
-        'crp_level': [crp_level],
-        'hemoglobin': [hemoglobin],
-        'sepsis_risk_score': [sepsis_risk_score],
-        'age': [age],
-        'comorbidity_index': [comorbidity_index],
-        'oxygen_device': [oxygen_device],
-        'gender': [gender],
-        'admission_type': [admission_type]
-    }
-    input_df = pd.DataFrame(input_data)
+    try:
+        # Collect inputs into a DataFrame
+        input_data = {
+            'hour_from_admission': [hour_from_admission],
+            'heart_rate': [heart_rate],
+            'respiratory_rate': [respiratory_rate],
+            'spo2_pct': [spo2_pct],
+            'temperature_c': [temperature_c],
+            'systolic_bp': [systolic_bp],
+            'diastolic_bp': [diastolic_bp],
+            'oxygen_flow': [oxygen_flow],
+            'mobility_score': [mobility_score],
+            'nurse_alert': [nurse_alert],
+            'wbc_count': [wbc_count],
+            'lactate': [lactate],
+            'creatinine': [creatinine],
+            'crp_level': [crp_level],
+            'hemoglobin': [hemoglobin],
+            'sepsis_risk_score': [sepsis_risk_score],
+            'age': [age],
+            'comorbidity_index': [comorbidity_index],
+            'oxygen_device': [oxygen_device],
+            'gender': [gender],
+            'admission_type': [admission_type]
+        }
+        input_df = pd.DataFrame(input_data)
 
-    # Apply Winsorization to input_df using the defined limits
-    for col, limits in winsor_limits.items():
-        if col in input_df.columns:
-            input_df[col] = winsorize(input_df[col].values, limits=limits)
+        for col, limits in winsor_limits.items():
+            if col in input_df.columns:
+                input_df[col] = winsorize(input_df[col].values, limits=limits)
 
-    # Apply one-hot encoding for categorical features
-    input_df = pd.get_dummies(input_df, columns=['oxygen_device', 'gender', 'admission_type'])
+        input_df = pd.get_dummies(input_df, columns=['oxygen_device', 'gender', 'admission_type'])
+        input_df = input_df.reindex(columns=expected_features, fill_value=0)
 
-    # Reindex input_df to match the expected_features list and fill any missing columns with 0
-    # This ensures consistency in columns and their order for the model.
-    input_df = input_df.reindex(columns=expected_features, fill_value=0)
+        bool_cols = input_df.select_dtypes(include='bool').columns
+        if len(bool_cols) > 0:
+            input_df[bool_cols] = input_df[bool_cols].astype(int)
 
-    # Convert boolean columns to integer (0 or 1) that might result from get_dummies for new data
-    bool_cols = input_df.select_dtypes(include='bool').columns
-    if len(bool_cols) > 0:
-        input_df[bool_cols] = input_df[bool_cols].astype(int)
+        input_df[ss_cols] = standard_scaler.transform(input_df[ss_cols])
+        input_df[rbt_cols] = robust_scaler.transform(input_df[rbt_cols])
 
-    # Apply StandardScaler
-    input_df[ss_cols] = standard_scaler.transform(input_df[ss_cols])
+        prediction = rf_model.predict(input_df)
+        prediction_proba = rf_model.predict_proba(input_df)
 
-    # Apply RobustScaler
-    input_df[rbt_cols] = robust_scaler.transform(input_df[rbt_cols])
+        st.subheader('Prediction Result:')
+        st.write(f"**Prediction Value:** {prediction[0]}")
+        st.write(f"**Probability of No Deterioration (0):** {prediction_proba[0][0]:.4f}")
+        st.write(f"**Probability of Deterioration (1):** {prediction_proba[0][1]:.4f}")
 
-    # Make prediction
-    prediction = rf_model.predict(input_df)
-    prediction_proba = rf_model.predict_proba(input_df)
-        
-st.subheader('Prediction Result:')
+        if prediction[0] == 1:
+            st.error("⚠️ This patient is predicted to **deteriorate** within the next 12 hours.")
+        else:
+            st.success("✅ This patient is predicted to **not deteriorate** within the next 12 hours.")
 
-# Show raw prediction value (0 or 1)
-st.write(f"**Prediction Value:** {prediction[0]}")
+        st.caption('Disclaimer: This prediction is for informational purposes only and should not replace professional medical advice.')
 
-# Show probabilities
-st.write(f"**Probability of No Deterioration (0):** {prediction_proba[0][0]:.4f}")
-st.write(f"**Probability of Deterioration (1):** {prediction_proba[0][1]:.4f}")
-
-# Show result message
-if prediction[0] == 1:
-    st.error("⚠️ This patient is predicted to **deteriorate** within the next 12 hours.")
-else:
-    st.success("✅ This patient is predicted to **not deteriorate** within the next 12 hours.")
-
+    except Exception as e:
+        st.error(f"❌ Error during prediction: {e}")
 st.caption('Disclaimer: This prediction is for informational purposes only and should not replace professional medical advice.')

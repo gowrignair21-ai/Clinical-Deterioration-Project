@@ -54,7 +54,7 @@ temperature_c = st.sidebar.number_input('Temperature (C)', min_value=35.0, max_v
 systolic_bp = st.sidebar.number_input('Systolic BP', min_value=70.0, max_value=185.0, value=85.0, step=0.1)
 diastolic_bp = st.sidebar.number_input('Diastolic BP', min_value=40.0, max_value=110.0, value=50.0, step=0.1)
 oxygen_flow = st.sidebar.number_input('Oxygen Flow', min_value=0.0, max_value=60.0, value=5.0, step=0.1)
-mobility_score = st.sidebar.slider('Mobility Score (0-4)', 0, 4, 2)
+mobility_score = st.sidebar.slider('Mobility Score (0-4)', 0, 4, 1)
 nurse_alert = st.sidebar.radio('Nurse Alert Triggered', [0, 1], index=1)
 wbc_count = st.sidebar.number_input('WBC Count', min_value=2.0, max_value=30.0, value=16.0, step=0.1)
 lactate = st.sidebar.number_input('Lactate', min_value=0.5, max_value=8.0, value=3.5, step=0.01)
@@ -63,7 +63,7 @@ crp_level = st.sidebar.number_input('CRP Level', min_value=0.0, max_value=250.0,
 hemoglobin = st.sidebar.number_input('Hemoglobin', min_value=7.0, max_value=17.0, value=10.5, step=0.1)
 sepsis_risk_score = st.sidebar.number_input('Sepsis Risk Score', min_value=0.0, max_value=1.0, value=0.85, step=0.01)
 age = st.sidebar.number_input('Age', min_value=18, max_value=90, value=72)
-comorbidity_index = st.sidebar.slider('Comorbidity Index (0-8)', 0, 8, 4)
+comorbidity_index = st.sidebar.slider('Comorbidity Index (0-8)', 0, 8, 3)
 
 # Input widgets for categorical features
 st.sidebar.header('Patient Background')

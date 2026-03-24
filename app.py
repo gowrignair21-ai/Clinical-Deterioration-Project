@@ -29,9 +29,6 @@ winsor_limits = {
     'hemoglobin': [0.05, 0.01]
 }
 
-# The exact list of features the model was trained on, in the correct order.
-# This list *does not* include 'mean_arterial_pressure' and 'pulse_pressure'
-# because the model was trained before those features were added to the main dataframe (df1).
 expected_features = ['hour_from_admission', 'heart_rate', 'respiratory_rate', 'spo2_pct',
                      'temperature_c', 'systolic_bp', 'diastolic_bp', 'oxygen_flow',
                      'mobility_score', 'nurse_alert', 'wbc_count', 'lactate',
@@ -68,11 +65,11 @@ comorbidity_index = st.sidebar.slider('Comorbidity Index (0-8)', 0, 8, 3)
 # Input widgets for categorical features
 st.sidebar.header('Patient Background')
 oxygen_device_options = ['none', 'nasal', 'mask', 'hfnc', 'niv']
-oxygen_device = st.sidebar.selectbox('Oxygen Device', oxygen_device_options)
+oxygen_device = st.sidebar.selectbox('Oxygen Device', oxygen_device_options,value='mask')
 gender_options = ['M', 'F']
-gender = st.sidebar.selectbox('Gender', gender_options)
+gender = st.sidebar.selectbox('Gender', gender_options,value='M')
 admission_type_options = ['Elective', 'Transfer', 'ED']
-admission_type = st.sidebar.selectbox('Admission Type', admission_type_options)
+admission_type = st.sidebar.selectbox('Admission Type', admission_type_options,value='ED')
 
 if st.button('Predict Deterioration'):
     try:

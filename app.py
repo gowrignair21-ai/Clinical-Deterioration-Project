@@ -65,11 +65,11 @@ comorbidity_index = st.sidebar.slider('Comorbidity Index (0-8)', 0, 8, 3)
 # Input widgets for categorical features
 st.sidebar.header('Patient Background')
 oxygen_device_options = ['none', 'nasal', 'mask', 'hfnc', 'niv']
-oxygen_device = st.sidebar.selectbox('Oxygen Device', oxygen_device_options,index=2)
+oxygen_device = st.sidebar.selectbox('Oxygen Device', oxygen_device_options)
 gender_options = ['M', 'F']
-gender = st.sidebar.selectbox('Gender', gender_options,index=0)
+gender = st.sidebar.selectbox('Gender', gender_options)
 admission_type_options = ['Elective', 'Transfer', 'ED']
-admission_type = st.sidebar.selectbox('Admission Type', admission_type_options,index=2)
+admission_type = st.sidebar.selectbox('Admission Type', admission_type_options)
 
 if st.button('Predict Deterioration'):
     try:

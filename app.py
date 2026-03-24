@@ -1,7 +1,7 @@
 import streamlit as st
-import pandas as pd # Ensure pandas is imported
-import joblib # Ensure joblib is imported
-from scipy.stats.mstats import winsorize # Added for winsorization
+import pandas as pd
+import joblib 
+from scipy.stats.mstats import winsorize 
 
 # Load the pre-trained model and scalers
 rf_model = joblib.load('rf_model.pkl')
@@ -111,25 +111,7 @@ if st.button('Predict Deterioration'):
             input_df[bool_cols] = input_df[bool_cols].astype(int)
 
         input_df[ss_cols] = standard_scaler.transform(input_df[ss_cols])
-        input_df[rbt_cols] = robust_scaler.transform(input_df[rbt_cols])
-
-        st.subheader("🔧 Debugging Information")
-        
-        st.write("**Values after processing (first 10 features):**")
-        processed_values = {}
-        for col in expected_features[:10]:
-            if col in input_df.columns:
-                processed_values[col] = float(input_df[col].values[0])
-        st.write(processed_values)
-        
-        st.write(f"**Features being sent to model:** {len(expected_features)}")
-        st.write(f"**Model expects:** {rf_model.n_features_in_}")
-        
-        missing = set(expected_features) - set(input_df.columns)
-        if missing:
-            st.error(f"⚠️ Missing features: {missing}")
-        else:
-            st.success("✅ All expected features present")     
+        input_df[rbt_cols] = robust_scaler.transform(input_df[rbt_cols])     
                    
         prediction = rf_model.predict(input_df)
         prediction_proba = rf_model.predict_proba(input_df)

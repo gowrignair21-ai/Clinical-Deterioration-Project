@@ -10,7 +10,7 @@ robust_scaler = joblib.load('robust_scaler.pkl')
 
 # Define the columns that were scaled by StandardScaler and RobustScaler
 ss_cols = ['heart_rate', 'respiratory_rate', 'temperature_c', 'wbc_count', 
-           'creatinine', 'hemoglobin', 'systolic_bp', 'diastolic_bp']
+           'creatinine', 'hemoglobin']
 rbt_cols = ['spo2_pct', 'lactate', 'crp_level','oxygen_flow']
 
 # Define winsorization limits used during training

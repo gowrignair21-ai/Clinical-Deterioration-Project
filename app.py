@@ -9,7 +9,8 @@ standard_scaler = joblib.load('standard_scaler.pkl')
 robust_scaler = joblib.load('robust_scaler.pkl')
 
 # Define the columns that were scaled by StandardScaler and RobustScaler
-ss_cols = ['heart_rate', 'respiratory_rate', 'temperature_c', 'wbc_count', 'creatinine', 'hemoglobin']
+ss_cols = ['heart_rate', 'respiratory_rate', 'temperature_c', 'wbc_count', 
+           'creatinine', 'hemoglobin', 'systolic_bp', 'diastolic_bp']
 rbt_cols = ['spo2_pct', 'lactate', 'crp_level']
 
 # Define winsorization limits used during training
@@ -103,7 +104,7 @@ if st.button('Predict Deterioration'):
 
         for col, limits in winsor_limits.items():
             if col in input_df.columns:
-                input_df[col] = winsorize(input_df[col].values, limits=limits)
+                input_df[col] = winsorize(input_df[col], limits=limits)
 
         input_df = pd.get_dummies(input_df, columns=['oxygen_device', 'gender', 'admission_type'])
         input_df = input_df.reindex(columns=expected_features, fill_value=0)
@@ -129,7 +130,3 @@ if st.button('Predict Deterioration'):
             st.success("✅ This patient is predicted to **not deteriorate** within the next 12 hours.")
 
         st.caption('Disclaimer: This prediction is for informational purposes only and should not replace professional medical advice.')
-
-    except Exception as e:
-        st.error(f"❌ Error during prediction: {e}")
-st.caption('Disclaimer: This prediction is for informational purposes only and should not replace professional medical advice.')

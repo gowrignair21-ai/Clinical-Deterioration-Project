@@ -72,7 +72,7 @@ systolic_bp = st.sidebar.number_input('Systolic BP (mmHg)', min_value=70.0, max_
 diastolic_bp = st.sidebar.number_input('Diastolic BP (mmHg)', min_value=40.0, max_value=110.0, value=50.0, step=0.1)
 
 map_value, pp_value = calculate_derived_features(systolic_bp, diastolic_bp)
-    st.info(f"**Calculated Values:** Mean Arterial Pressure = {map_value:.1f} mmHg | Pulse Pressure = {pp_value:.1f} mmHg")
+st.info(f"**Calculated Values:** Mean Arterial Pressure = {map_value:.1f} mmHg | Pulse Pressure = {pp_value:.1f} mmHg")
 
 st.sidebar.header('Patient Background')
 oxygen_device_options = ['none', 'nasal', 'mask', 'hfnc', 'niv']

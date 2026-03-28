@@ -1,19 +1,16 @@
 import streamlit as st
 import pandas as pd
-import joblib 
-from scipy.stats.mstats import winsorize 
+import joblib
+from scipy.stats.mstats import winsorize
 
-# Load the pre-trained model and scalers
 rf_model = joblib.load('rf_model.pkl')
 standard_scaler = joblib.load('standard_scaler.pkl')
 robust_scaler = joblib.load('robust_scaler.pkl')
 
-# Define the columns that were scaled by StandardScaler and RobustScaler
-ss_cols = ['heart_rate', 'respiratory_rate', 'temperature_c', 'wbc_count', 
+ss_cols = ['heart_rate', 'respiratory_rate', 'temperature_c', 'wbc_count',
            'creatinine', 'hemoglobin']
 rbt_cols = ['spo2_pct', 'lactate', 'crp_level','oxygen_flow']
 
-# Define winsorization limits used during training
 winsor_limits = {
     'heart_rate': [0.01, 0.05],
     'respiratory_rate': [0, 0.05],
@@ -38,10 +35,20 @@ expected_features = ['hour_from_admission', 'heart_rate', 'respiratory_rate', 's
                      'gender_F', 'gender_M', 'admission_type_ED',
                      'admission_type_Elective', 'admission_type_Transfer']
 
+def calculate_derived_features(systolic_bp, diastolic_bp):
+    """
+    Calculate Mean Arterial Pressure (MAP) and Pulse Pressure (PP)
+    
+    MAP = Diastolic BP + (Systolic BP - Diastolic BP) / 3
+    Pulse Pressure = Systolic BP - Diastolic BP
+    """
+    map_value = diastolic_bp + (systolic_bp - diastolic_bp) / 3
+    pulse_pressure_value = systolic_bp - diastolic_bp
+    return map_value, pulse_pressure_value
+
 st.title('Hospital Deterioration Prediction')
 st.write('Enter patient details to predict the likelihood of deterioration within the next 12 hours.')
 
-# Input widgets for numerical features
 st.sidebar.header('Patient Clinical Data')
 hour_from_admission = st.sidebar.number_input('Hours From Admission', min_value=0, max_value=71, value=8)
 heart_rate = st.sidebar.number_input('Heart Rate', min_value=40.0, max_value=180.0, value= 125.0, step=0.1)
@@ -61,8 +68,12 @@ hemoglobin = st.sidebar.number_input('Hemoglobin', min_value=7.0, max_value=17.0
 sepsis_risk_score = st.sidebar.number_input('Sepsis Risk Score', min_value=0.0, max_value=1.0, value=0.85, step=0.01)
 age = st.sidebar.number_input('Age', min_value=18, max_value=90, value=72)
 comorbidity_index = st.sidebar.slider('Comorbidity Index (0-8)', 0, 8, 3)
+systolic_bp = st.sidebar.number_input('Systolic BP (mmHg)', min_value=70.0, max_value=185.0, value=85.0, step=0.1)
+diastolic_bp = st.sidebar.number_input('Diastolic BP (mmHg)', min_value=40.0, max_value=110.0, value=50.0, step=0.1)
 
-# Input widgets for categorical features
+map_value, pp_value = calculate_derived_features(systolic_bp, diastolic_bp)
+    st.info(f"**Calculated Values:** Mean Arterial Pressure = {map_value:.1f} mmHg | Pulse Pressure = {pp_value:.1f} mmHg")
+
 st.sidebar.header('Patient Background')
 oxygen_device_options = ['none', 'nasal', 'mask', 'hfnc', 'niv']
 oxygen_device = st.sidebar.selectbox('Oxygen Device', oxygen_device_options)
@@ -73,7 +84,6 @@ admission_type = st.sidebar.selectbox('Admission Type', admission_type_options)
 
 if st.button('Predict Deterioration'):
     try:
-        # Collect inputs into a DataFrame
         input_data = {
             'hour_from_admission': [hour_from_admission],
             'heart_rate': [heart_rate],
@@ -99,6 +109,10 @@ if st.button('Predict Deterioration'):
         }
         input_df = pd.DataFrame(input_data)
 
+        map_values, pp_values = calculate_derived_features(systolic_bp, diastolic_bp)
+        input_df['mean_arterial_pressure'] = map_values
+        input_df['pulse_pressure'] = pp_values
+
         for col, limits in winsor_limits.items():
             if col in input_df.columns:
                 input_df[col] = winsorize(input_df[col], limits=limits)
@@ -111,8 +125,8 @@ if st.button('Predict Deterioration'):
             input_df[bool_cols] = input_df[bool_cols].astype(int)
 
         input_df[ss_cols] = standard_scaler.transform(input_df[ss_cols])
-        input_df[rbt_cols] = robust_scaler.transform(input_df[rbt_cols])     
-                   
+        input_df[rbt_cols] = robust_scaler.transform(input_df[rbt_cols])
+
         prediction = rf_model.predict(input_df)
         prediction_proba = rf_model.predict_proba(input_df)
 
@@ -127,7 +141,7 @@ if st.button('Predict Deterioration'):
             st.success("✅ This patient is predicted to **not deteriorate** within the next 12 hours.")
 
         st.caption('Disclaimer: This prediction is for informational purposes only and should not replace professional medical advice.')
-    
+
     except Exception as e:
         st.error(f"An error occurred during prediction: {str(e)}")
         st.info("Please check your input values and try again.")

@@ -9,7 +9,7 @@ robust_scaler = joblib.load('robust_scaler.pkl')
 
 ss_cols = ['heart_rate', 'respiratory_rate', 'temperature_c', 'wbc_count',
            'creatinine', 'hemoglobin']
-rbt_cols = ['spo2_pct', 'lactate', 'crp_level','oxygen_flow']
+rbt_cols = ['spo2_pct', 'lactate', 'crp_level', 'oxygen_flow']
 
 winsor_limits = {
     'heart_rate': [0.01, 0.05],
@@ -38,7 +38,7 @@ expected_features = ['hour_from_admission', 'heart_rate', 'respiratory_rate', 's
 def calculate_derived_features(systolic_bp, diastolic_bp):
     """
     Calculate Mean Arterial Pressure (MAP) and Pulse Pressure (PP)
-    
+
     MAP = Diastolic BP + (Systolic BP - Diastolic BP) / 3
     Pulse Pressure = Systolic BP - Diastolic BP
     """
@@ -46,17 +46,18 @@ def calculate_derived_features(systolic_bp, diastolic_bp):
     pulse_pressure_value = systolic_bp - diastolic_bp
     return map_value, pulse_pressure_value
 
+
 st.title('Hospital Deterioration Prediction')
 st.write('Enter patient details to predict the likelihood of deterioration within the next 12 hours.')
 
 st.sidebar.header('Patient Clinical Data')
 hour_from_admission = st.sidebar.number_input('Hours From Admission', min_value=0, max_value=71, value=8)
-heart_rate = st.sidebar.number_input('Heart Rate', min_value=40.0, max_value=180.0, value= 125.0, step=0.1)
+heart_rate = st.sidebar.number_input('Heart Rate', min_value=40.0, max_value=180.0, value=125.0, step=0.1)
 respiratory_rate = st.sidebar.number_input('Respiratory Rate', min_value=8.0, max_value=45.0, value=28.0, step=0.1)
 spo2_pct = st.sidebar.number_input('SpO2 Percentage', min_value=70.0, max_value=100.0, value=88.0, step=0.1)
 temperature_c = st.sidebar.number_input('Temperature (C)', min_value=35.0, max_value=41.0, value=38.5, step=0.1)
-systolic_bp = st.sidebar.number_input('Systolic BP', min_value=70.0, max_value=185.0, value=85.0, step=0.1)
-diastolic_bp = st.sidebar.number_input('Diastolic BP', min_value=40.0, max_value=110.0, value=50.0, step=0.1)
+systolic_bp = st.sidebar.number_input('Systolic BP (mmHg)', min_value=70.0, max_value=185.0, value=85.0, step=0.1)
+diastolic_bp = st.sidebar.number_input('Diastolic BP (mmHg)', min_value=40.0, max_value=110.0, value=50.0, step=0.1)
 oxygen_flow = st.sidebar.number_input('Oxygen Flow', min_value=0.0, max_value=60.0, value=5.0, step=0.1)
 mobility_score = st.sidebar.slider('Mobility Score (0-4)', 0, 4, 1)
 nurse_alert = st.sidebar.radio('Nurse Alert Triggered', [0, 1], index=1)
@@ -68,11 +69,12 @@ hemoglobin = st.sidebar.number_input('Hemoglobin', min_value=7.0, max_value=17.0
 sepsis_risk_score = st.sidebar.number_input('Sepsis Risk Score', min_value=0.0, max_value=1.0, value=0.85, step=0.01)
 age = st.sidebar.number_input('Age', min_value=18, max_value=90, value=72)
 comorbidity_index = st.sidebar.slider('Comorbidity Index (0-8)', 0, 8, 3)
-systolic_bp = st.sidebar.number_input('Systolic BP (mmHg)', min_value=70.0, max_value=185.0, value=85.0, step=0.1)
-diastolic_bp = st.sidebar.number_input('Diastolic BP (mmHg)', min_value=40.0, max_value=110.0, value=50.0, step=0.1)
 
+# Calculate and display derived features in the sidebar
 map_value, pp_value = calculate_derived_features(systolic_bp, diastolic_bp)
-st.sidebar.info(f" Mean Arterial Pressure = {map_value:.1f} mmHg | Pulse Pressure = {pp_value:.1f} mmHg")
+st.sidebar.subheader('Derived Haemodynamic Values')
+st.sidebar.number_input('Mean Arterial Pressure (mmHg)', value=round(map_value, 1), disabled=True)
+st.sidebar.number_input('Pulse Pressure (mmHg)', value=round(pp_value, 1), disabled=True)
 
 st.sidebar.header('Patient Background')
 oxygen_device_options = ['none', 'nasal', 'mask', 'hfnc', 'niv']

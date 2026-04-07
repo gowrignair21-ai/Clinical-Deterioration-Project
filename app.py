@@ -50,7 +50,7 @@ def calculate_derived_features(systolic_bp, diastolic_bp):
 st.title('Hospital Deterioration Prediction')
 st.write('Enter patient details to predict the likelihood of deterioration within the next 12 hours.')
 
-st.sidebar.header('Patient Clinical Data')
+st.header('Patient Clinical Data')
 hour_from_admission = st.sidebar.number_input('Hours From Admission', min_value=0, max_value=71, value=8)
 heart_rate = st.sidebar.number_input('Heart Rate', min_value=40.0, max_value=180.0, value=125.0, step=0.1)
 respiratory_rate = st.sidebar.number_input('Respiratory Rate', min_value=8.0, max_value=45.0, value=28.0, step=0.1)
@@ -72,11 +72,11 @@ comorbidity_index = st.sidebar.slider('Comorbidity Index (0-8)', 0, 8, 3)
 
 # Calculate and display derived features in the sidebar
 map_value, pp_value = calculate_derived_features(systolic_bp, diastolic_bp)
-st.sidebar.subheader('Derived Haemodynamic Values')
-st.sidebar.number_input('Mean Arterial Pressure (mmHg)', value=round(map_value, 1), disabled=True)
-st.sidebar.number_input('Pulse Pressure (mmHg)', value=round(pp_value, 1), disabled=True)
+st.subheader('Derived Haemodynamic Values')
+st.number_input('Mean Arterial Pressure (mmHg)', value=round(map_value, 1), disabled=True)
+st.number_input('Pulse Pressure (mmHg)', value=round(pp_value, 1), disabled=True)
 
-st.sidebar.header('Patient Background')
+st.header('Patient Background')
 oxygen_device_options = ['none', 'nasal', 'mask', 'hfnc', 'niv']
 oxygen_device = st.sidebar.selectbox('Oxygen Device', oxygen_device_options)
 gender_options = ['M', 'F']

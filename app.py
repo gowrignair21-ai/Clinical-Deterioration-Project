@@ -1,16 +1,19 @@
 import streamlit as st
 import pandas as pd
-import joblib
-from scipy.stats.mstats import winsorize
+import joblib 
+from scipy.stats.mstats import winsorize 
 
+# Load the pre-trained model and scalers
 rf_model = joblib.load('rf_model.pkl')
 standard_scaler = joblib.load('standard_scaler.pkl')
 robust_scaler = joblib.load('robust_scaler.pkl')
 
-ss_cols = ['heart_rate', 'respiratory_rate', 'temperature_c', 'wbc_count',
+# Define the columns that were scaled by StandardScaler and RobustScaler
+ss_cols = ['heart_rate', 'respiratory_rate', 'temperature_c', 'wbc_count', 
            'creatinine', 'hemoglobin']
-rbt_cols = ['spo2_pct', 'lactate', 'crp_level', 'oxygen_flow']
+rbt_cols = ['spo2_pct', 'lactate', 'crp_level','oxygen_flow']
 
+# Define winsorization limits used during training
 winsor_limits = {
     'heart_rate': [0.01, 0.05],
     'respiratory_rate': [0, 0.05],
@@ -35,57 +38,67 @@ expected_features = ['hour_from_admission', 'heart_rate', 'respiratory_rate', 's
                      'gender_F', 'gender_M', 'admission_type_ED',
                      'admission_type_Elective', 'admission_type_Transfer']
 
-def calculate_derived_features(systolic_bp, diastolic_bp):
-    """
-    Calculate Mean Arterial Pressure (MAP) and Pulse Pressure (PP)
+st.set_page_config(page_title="Hospital Deterioration Prediction", page_icon="🏥", layout="wide")
 
-    MAP = Diastolic BP + (Systolic BP - Diastolic BP) / 3
-    Pulse Pressure = Systolic BP - Diastolic BP
-    """
-    map_value = diastolic_bp + (systolic_bp - diastolic_bp) / 3
-    pulse_pressure_value = systolic_bp - diastolic_bp
-    return map_value, pulse_pressure_value
+st.title("🏥 Hospital Deterioration Prediction")
+st.markdown("Enter patient details to predict the likelihood of deterioration within the next 12 hours.")
 
+# Create two columns for layout
+col1, col2 = st.columns(2)
 
-st.title('Hospital Deterioration Prediction')
-st.write('Enter patient details to predict the likelihood of deterioration within the next 12 hours.')
+with col1:
+    st.markdown("### 📋 Patient Background")
+    
+    oxygen_device_options = ['none', 'nasal', 'mask', 'hfnc', 'niv']
+    oxygen_device = st.selectbox("Oxygen Device", oxygen_device_options)
+    
+    gender_options = ['M', 'F']
+    gender = st.selectbox("Gender", gender_options)
+    
+    admission_type_options = ['Elective', 'Transfer', 'ED']
+    admission_type = st.selectbox("Admission Type", admission_type_options)
+    
+    st.markdown("### 📊 Clinical Measurements")
+    
+    col1a, col1b = st.columns(2)
+    with col1a:
+        heart_rate = st.number_input("Heart Rate", min_value=40.0, max_value=180.0, value=125.0, step=0.1)
+        respiratory_rate = st.number_input("Respiratory Rate", min_value=8.0, max_value=45.0, value=28.0, step=0.1)
+        spo2_pct = st.number_input("SpO2 Percentage", min_value=70.0, max_value=100.0, value=88.0, step=0.1)
+        temperature_c = st.number_input("Temperature (C)", min_value=35.0, max_value=41.0, value=38.5, step=0.1)
+        systolic_bp = st.number_input("Systolic BP", min_value=70.0, max_value=185.0, value=85.0, step=0.1)
+        diastolic_bp = st.number_input("Diastolic BP", min_value=40.0, max_value=110.0, value=50.0, step=0.1)
+    with col1b:
+        oxygen_flow = st.number_input("Oxygen Flow", min_value=0.0, max_value=60.0, value=5.0, step=0.1)
+        wbc_count = st.number_input("WBC Count", min_value=2.0, max_value=30.0, value=16.0, step=0.1)
+        lactate = st.number_input("Lactate", min_value=0.5, max_value=8.0, value=3.5, step=0.01)
+        creatinine = st.number_input("Creatinine", min_value=0.4, max_value=4.5, value=2.1, step=0.01)
+        crp_level = st.number_input("CRP Level", min_value=0.0, max_value=250.0, value=150.0, step=0.1)
+        hemoglobin = st.number_input("Hemoglobin", min_value=7.0, max_value=17.0, value=10.5, step=0.1)
 
-st.header('Patient Clinical Data')
-hour_from_admission = st.sidebar.number_input('Hours From Admission', min_value=0, max_value=71, value=8)
-heart_rate = st.sidebar.number_input('Heart Rate', min_value=40.0, max_value=180.0, value=125.0, step=0.1)
-respiratory_rate = st.sidebar.number_input('Respiratory Rate', min_value=8.0, max_value=45.0, value=28.0, step=0.1)
-spo2_pct = st.sidebar.number_input('SpO2 Percentage', min_value=70.0, max_value=100.0, value=88.0, step=0.1)
-temperature_c = st.sidebar.number_input('Temperature (C)', min_value=35.0, max_value=41.0, value=38.5, step=0.1)
-systolic_bp = st.sidebar.number_input('Systolic BP (mmHg)', min_value=70.0, max_value=185.0, value=85.0, step=0.1)
-diastolic_bp = st.sidebar.number_input('Diastolic BP (mmHg)', min_value=40.0, max_value=110.0, value=50.0, step=0.1)
-oxygen_flow = st.sidebar.number_input('Oxygen Flow', min_value=0.0, max_value=60.0, value=5.0, step=0.1)
-mobility_score = st.sidebar.slider('Mobility Score (0-4)', 0, 4, 1)
-nurse_alert = st.sidebar.radio('Nurse Alert Triggered', [0, 1], index=1)
-wbc_count = st.sidebar.number_input('WBC Count', min_value=2.0, max_value=30.0, value=16.0, step=0.1)
-lactate = st.sidebar.number_input('Lactate', min_value=0.5, max_value=8.0, value=3.5, step=0.01)
-creatinine = st.sidebar.number_input('Creatinine', min_value=0.4, max_value=4.5, value=2.1, step=0.01)
-crp_level = st.sidebar.number_input('CRP Level', min_value=0.0, max_value=250.0, value=150.0, step=0.1)
-hemoglobin = st.sidebar.number_input('Hemoglobin', min_value=7.0, max_value=17.0, value=10.5, step=0.1)
-sepsis_risk_score = st.sidebar.number_input('Sepsis Risk Score', min_value=0.0, max_value=1.0, value=0.85, step=0.01)
-age = st.sidebar.number_input('Age', min_value=18, max_value=90, value=72)
-comorbidity_index = st.sidebar.slider('Comorbidity Index (0-8)', 0, 8, 3)
+with col2:
+    st.markdown("### 👤 Patient Information")
+    
+    col2a, col2b = st.columns(2)
+    with col2a:
+        hour_from_admission = st.number_input("Hours From Admission", min_value=0, max_value=71, value=8)
+        age = st.number_input("Age", min_value=18, max_value=90, value=72)
+    with col2b:
+        mobility_score = st.slider("Mobility Score (0-4)", 0, 4, 1)
+        comorbidity_index = st.slider("Comorbidity Index (0-8)", 0, 8, 3)
+    
+    nurse_alert = st.radio("Nurse Alert Triggered", [0, 1], index=1, horizontal=True)
+    sepsis_risk_score = st.number_input("Sepsis Risk Score", min_value=0.0, max_value=1.0, value=0.85, step=0.01)
 
-# Calculate and display derived features in the sidebar
-map_value, pp_value = calculate_derived_features(systolic_bp, diastolic_bp)
-st.subheader('Derived Haemodynamic Values')
-st.number_input('Mean Arterial Pressure (mmHg)', value=round(map_value, 1), disabled=True)
-st.number_input('Pulse Pressure (mmHg)', value=round(pp_value, 1), disabled=True)
+# Prediction button centered
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    predict_button = st.button("🔮 Predict Deterioration", use_container_width=True, type="primary")
 
-st.header('Patient Background')
-oxygen_device_options = ['none', 'nasal', 'mask', 'hfnc', 'niv']
-oxygen_device = st.sidebar.selectbox('Oxygen Device', oxygen_device_options)
-gender_options = ['M', 'F']
-gender = st.sidebar.selectbox('Gender', gender_options)
-admission_type_options = ['Elective', 'Transfer', 'ED']
-admission_type = st.sidebar.selectbox('Admission Type', admission_type_options)
-
-if st.button('Predict Deterioration'):
+# Result display area
+if predict_button:
     try:
+        # Collect inputs into a DataFrame
         input_data = {
             'hour_from_admission': [hour_from_admission],
             'heart_rate': [heart_rate],
@@ -111,39 +124,78 @@ if st.button('Predict Deterioration'):
         }
         input_df = pd.DataFrame(input_data)
 
-        map_values, pp_values = calculate_derived_features(systolic_bp, diastolic_bp)
-        input_df['mean_arterial_pressure'] = map_values
-        input_df['pulse_pressure'] = pp_values
-
+        # Apply winsorization
         for col, limits in winsor_limits.items():
             if col in input_df.columns:
                 input_df[col] = winsorize(input_df[col], limits=limits)
 
+        # One-hot encoding
         input_df = pd.get_dummies(input_df, columns=['oxygen_device', 'gender', 'admission_type'])
         input_df = input_df.reindex(columns=expected_features, fill_value=0)
 
+        # Convert boolean columns to int
         bool_cols = input_df.select_dtypes(include='bool').columns
         if len(bool_cols) > 0:
             input_df[bool_cols] = input_df[bool_cols].astype(int)
 
+        # Apply scaling
         input_df[ss_cols] = standard_scaler.transform(input_df[ss_cols])
-        input_df[rbt_cols] = robust_scaler.transform(input_df[rbt_cols])
-
+        input_df[rbt_cols] = robust_scaler.transform(input_df[rbt_cols])     
+                   
         prediction = rf_model.predict(input_df)
         prediction_proba = rf_model.predict_proba(input_df)
 
-        st.subheader('Prediction Result:')
-        st.write(f"**Prediction Value:** {prediction[0]}")
-        st.write(f"**Probability of No Deterioration (0):** {prediction_proba[0][0]:.4f}")
-        st.write(f"**Probability of Deterioration (1):** {prediction_proba[0][1]:.4f}")
-
+        # Display results with card-like styling
+        st.markdown("---")
+        st.markdown("## 📊 Prediction Result")
+        
+        # Color-coded result card
         if prediction[0] == 1:
-            st.error("⚠️ This patient is predicted to **deteriorate** within the next 12 hours.")
+            st.markdown(
+                f"""
+                <div style="background-color: #FFE5E5; padding: 20px; border-radius: 10px; border-left: 5px solid #FF0000;">
+                    <h3 style="color: #FF0000; margin: 0;">⚠️ Deterioration Risk: HIGH</h3>
+                    <p style="font-size: 14px; margin-top: 10px;">This patient is predicted to deteriorate within the next 12 hours.</p>
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
         else:
-            st.success("✅ This patient is predicted to **not deteriorate** within the next 12 hours.")
-
-        st.caption('Disclaimer: This prediction is for informational purposes only and should not replace professional medical advice.')
-
+            st.markdown(
+                f"""
+                <div style="background-color: #E5FFE5; padding: 20px; border-radius: 10px; border-left: 5px solid #00AA00;">
+                    <h3 style="color: #00AA00; margin: 0;">✅ Deterioration Risk: LOW</h3>
+                    <p style="font-size: 14px; margin-top: 10px;">This patient is predicted to NOT deteriorate within the next 12 hours.</p>
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
+        
+        # Probability display
+        col_prob1, col_prob2, col_prob3 = st.columns([1, 2, 1])
+        with col_prob2:
+            st.markdown("### Probability Breakdown")
+            prob_df = pd.DataFrame({
+                "Outcome": ["No Deterioration (0)", "Deterioration (1)"],
+                "Probability": [prediction_proba[0][0], prediction_proba[0][1]]
+            })
+            st.dataframe(
+                prob_df.style.format({"Probability": "{:.4f}"}).background_gradient(subset=["Probability"], cmap="RdYlGn", vmin=0, vmax=1),
+                use_container_width=True,
+                hide_index=True
+            )
+        
+        st.caption("⚠️ **Disclaimer:** This prediction is for informational purposes only and should not replace professional medical advice.")
+    
     except Exception as e:
         st.error(f"An error occurred during prediction: {str(e)}")
         st.info("Please check your input values and try again.")
+else:
+    # Display placeholder when no prediction has been made
+    st.markdown("---")
+    st.markdown("### 🔍 Prediction Result")
+    st.info("Click **'Predict Deterioration'** to see the prediction results here.")
+
+# Footer
+st.markdown("---")
+st.caption("🏥 Hospital Deterioration Prediction System | Powered by XGBoost")

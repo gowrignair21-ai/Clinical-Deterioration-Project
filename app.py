@@ -145,57 +145,18 @@ if predict_button:
         prediction = rf_model.predict(input_df)
         prediction_proba = rf_model.predict_proba(input_df)
 
-        # Display results with card-like styling
-        st.markdown("---")
-        st.markdown("## 📊 Prediction Result")
-        
-        # Color-coded result card
+        st.subheader('Prediction Result:')
+        st.write(f"**Prediction Value:** {prediction[0]}")
+        st.write(f"**Probability of No Deterioration (0):** {prediction_proba[0][0]:.4f}")
+        st.write(f"**Probability of Deterioration (1):** {prediction_proba[0][1]:.4f}")
+
         if prediction[0] == 1:
-            st.markdown(
-                f"""
-                <div style="background-color: #FFE5E5; padding: 20px; border-radius: 10px; border-left: 5px solid #FF0000;">
-                    <h3 style="color: #FF0000; margin: 0;">⚠️ Deterioration Risk: HIGH</h3>
-                    <p style="font-size: 14px; margin-top: 10px;">This patient is predicted to deteriorate within the next 12 hours.</p>
-                </div>
-                """, 
-                unsafe_allow_html=True
-            )
+            st.error("⚠️ This patient is predicted to **deteriorate** within the next 12 hours.")
         else:
-            st.markdown(
-                f"""
-                <div style="background-color: #E5FFE5; padding: 20px; border-radius: 10px; border-left: 5px solid #00AA00;">
-                    <h3 style="color: #00AA00; margin: 0;">✅ Deterioration Risk: LOW</h3>
-                    <p style="font-size: 14px; margin-top: 10px;">This patient is predicted to NOT deteriorate within the next 12 hours.</p>
-                </div>
-                """, 
-                unsafe_allow_html=True
-            )
-        
-        # Probability display
-        col_prob1, col_prob2, col_prob3 = st.columns([1, 2, 1])
-        with col_prob2:
-            st.markdown("### Probability Breakdown")
-            prob_df = pd.DataFrame({
-                "Outcome": ["No Deterioration (0)", "Deterioration (1)"],
-                "Probability": [prediction_proba[0][0], prediction_proba[0][1]]
-            })
-            st.dataframe(
-                prob_df.style.format({"Probability": "{:.4f}"}).background_gradient(subset=["Probability"], cmap="RdYlGn", vmin=0, vmax=1),
-                use_container_width=True,
-                hide_index=True
-            )
-        
-        st.caption("⚠️ **Disclaimer:** This prediction is for informational purposes only and should not replace professional medical advice.")
+            st.success("✅ This patient is predicted to **not deteriorate** within the next 12 hours.")
+
+        st.caption('Disclaimer: This prediction is for informational purposes only and should not replace professional medical advice.')
     
     except Exception as e:
         st.error(f"An error occurred during prediction: {str(e)}")
         st.info("Please check your input values and try again.")
-else:
-    # Display placeholder when no prediction has been made
-    st.markdown("---")
-    st.markdown("### 🔍 Prediction Result")
-    st.info("Click **'Predict Deterioration'** to see the prediction results here.")
-
-# Footer
-st.markdown("---")
-st.caption("🏥 Hospital Deterioration Prediction System | Powered by XGBoost")
